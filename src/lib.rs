@@ -26,6 +26,7 @@
 #![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
 
 pub mod html;
+pub mod rtjson;
 
 #[macro_use]
 extern crate bitflags;
@@ -58,6 +59,31 @@ pub extern fn html(s: *const c_char) -> CString {
     let mut s = String::with_capacity(r_str.len() * 3 / 2);
     let p = Parser::new_ext(r_str, Options::empty());
     html::push_html(&mut s, p);
+    let c_str = CString::new(s).unwrap();
+    c_str
+}
+
+#[no_mangle]
+pub extern fn free_html(c: *mut c_char) {
+    unsafe {
+        CString::from_raw(c);
+    }
+}
+
+// rtjson
+
+#[no_mangle]
+pub extern fn rtjson(s: *const c_char) -> CString {
+    let c_str = unsafe {
+        assert!(!s.is_null());
+
+        CStr::from_ptr(s)
+    };
+
+    let r_str = c_str.to_str().unwrap();
+    let mut s = String::with_capacity(r_str.len() * 3 / 2);
+    let p = Parser::new_ext(r_str, Options::empty());
+    rtjson::push_json(&mut s, p);
     let c_str = CString::new(s).unwrap();
     c_str
 }
